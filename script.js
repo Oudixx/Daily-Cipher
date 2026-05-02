@@ -176,13 +176,20 @@ mobileInput.addEventListener('input', () => {
 
 // Handle special keys (Enter) via window listener
 window.addEventListener('keyup', async (e) => {
+    // 1. If the game is over, do nothing
     if (attempts >= 6) return;
 
-    if (e.key === 'Enter' && currentGuess.length === 5) {
+    // 2. ONLY handle the Enter key here. 
+    // We let the 'mobileInput' listener handle letters and backspaces.
+    if (e.key === 'Enter') {
+        if (currentGuess.length < 5) {
+            notifyUser("NOT ENOUGH LETTERS");
+            return;
+        }
+
         const firstBox = document.getElementById(`box-${attempts * 5}`);
         const currentRow = firstBox.parentElement;
         
-        // Visual indicator of validation in progress
         firstBox.style.opacity = "0.5";
         const valid = await isWordReal(currentGuess);
         firstBox.style.opacity = "1";
@@ -195,8 +202,10 @@ window.addEventListener('keyup', async (e) => {
         }
         
         verifyGuess(currentGuess);
-        currentGuess = ""; // Ready for the next row
+        currentGuess = ""; 
+        return; // Exit the function
     }
+
 });
 
 // Open keyboard when user taps the board
