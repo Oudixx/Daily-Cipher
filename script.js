@@ -10,6 +10,7 @@ let currentBox = 0;
 let currentGuess = "";
 let secretWord = "";
 let attempts = 0;
+let guessedWords = []; // tracks previous guesses
 
 /**
  * INITIALIZATION & API HANDLING
@@ -171,37 +172,55 @@ mobileInput.addEventListener('input', () => {
     updateVisualFocus();
 });
 
-// Handle special keys (Enter) via window listener
+// Handle special keys (Enter) 
 window.addEventListener('keyup', async (e) => {
-    // 1. If the game is over, do nothing
     if (attempts >= 6) return;
 
-    // 2. ONLY handle the Enter key here. 
+    // ONLY handle the Enter key here 
     if (e.key === 'Enter') {
+        // Find the current row for the shake animation
+        const firstBox = document.getElementById(`box-${attempts * 5}`);
+        const currentRow = firstBox ? firstBox.parentElement : null;
+
+        // CHECK 1: Not enough letters
         if (currentGuess.length < 5) {
             notifyUser("NOT ENOUGH LETTERS");
+            if (currentRow) {
+                currentRow.classList.add('shake');
+                setTimeout(() => currentRow.classList.remove('shake'), 500);
+            }
             return;
         }
 
-        const firstBox = document.getElementById(`box-${attempts * 5}`);
-        const currentRow = firstBox.parentElement;
-        
-        firstBox.style.opacity = "0.5";
-        const valid = await isWordReal(currentGuess);
-        firstBox.style.opacity = "1";
+        // CHECK 2: Duplicate Guess
+        if (guessedWords.includes(currentGuess)) {
+            notifyUser("ALREADY TRIED THIS WORD");
+            if (currentRow) {
+                currentRow.classList.add('shake');
+                setTimeout(() => currentRow.classList.remove('shake'), 500);
+            }
+            return;
+        }
 
+        // Proceed to API Validation
+        if (firstBox) firstBox.style.opacity = "0.5";
+        const valid = await isWordReal(currentGuess);
+        if (firstBox) firstBox.style.opacity = "1";
+
+        // CHECK 3: Real Word Validation
         if (!valid) {
             notifyUser("WORD NOT FOUND IN ARCHIVE");
-            currentRow.classList.add('shake');
-            setTimeout(() => currentRow.classList.remove('shake'), 500);
+            if (currentRow) {
+                currentRow.classList.add('shake');
+                setTimeout(() => currentRow.classList.remove('shake'), 500);
+            }
             return;
         }
         
+        // Success: Submit the guess
         verifyGuess(currentGuess);
         currentGuess = ""; 
-        return; // Exit the function
     }
-
 });
 
 // Open keyboard when user taps the board
