@@ -205,4 +205,9 @@ async function isWordReal(word) {
     }
 }
 
+// Forces keyboard open on mobile tap
+board.addEventListener('click', () => {
+    document.getElementById('mobile-input').focus();
+});
+
 getNewCipher();
