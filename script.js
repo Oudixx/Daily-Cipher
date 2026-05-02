@@ -152,9 +152,6 @@ function resetGame() {
 /**
  * EVENT LISTENERS
  */
-
-// Handle character input via the hidden mobile-friendly field
-// This prevents double-typing and works on iPhone/Android
 mobileInput.addEventListener('input', () => {
     if (attempts >= 6) return;
 
@@ -180,7 +177,6 @@ window.addEventListener('keyup', async (e) => {
     if (attempts >= 6) return;
 
     // 2. ONLY handle the Enter key here. 
-    // We let the 'mobileInput' listener handle letters and backspaces.
     if (e.key === 'Enter') {
         if (currentGuess.length < 5) {
             notifyUser("NOT ENOUGH LETTERS");
