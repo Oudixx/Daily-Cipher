@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Daily Cipher</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <header>
+        <div class="logo-container">
+        <img src="cipher.png" alt="Cipher Logo" id="app-logo">
+        </div>
+        <h1>The Daily Cipher</h1>
+        <h3>Welcome to the Archive</h3>
+    </header>
+
+    <main class="main-layout">
+        
+        <section id="clue-container">
+            <form id="cipher-form">
+                <label for="difficulty">Archive Depth:</label>
+                <div class="custom-select-wrapper">
+                    <select id="difficulty">
+                        <option value="10">Level 1 (Common)</option>
+                        <option value="100" selected>Level 2 (Standard)</option>
+                        <option value="500">Level 3 (Obscure)</option>
+                    </select>
+                </div>
+                <div class="button-wrapper">
+                    <button type="button" id="regen-btn">New Cipher ✨</button>
+                </div>
+            </form>
+
+            <hr class="glass-divider">
+
+            <div class="clue-display">
+                <div class="clue-item">
+                    <span class="clue-label">Category:</span> 
+                    <span id="data-1" class="clue-value"></span>
+                </div>
+                <div class="clue-item">
+                    <span class="clue-label">Pronunciation:</span> 
+                    <span id="data-2" class="clue-value"></span>
+                </div>
+                <div class="clue-item">
+                    <span class="clue-label">Definition:</span> 
+                    <span id="data-3" class="clue-value"></span>
+                </div>
+                <div class="clue-item">
+                    <span class="clue-label">Synonyms:</span> 
+                    <span id="data-4" class="clue-value"></span>
+                </div>
+                <div class="clue-item">
+                    <span class="clue-label">Antonyms:</span> 
+                    <span id="data-5" class="clue-value"></span>
+                </div>
+            </div>
+        </section>
+
+        <section id="game-board-container">
+            <div id="game-board"></div>
+        </section>
+
+    </main>
+
+    <div id="game-modal" class="modal modal-hidden">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            
+            <img id="modal-gif" src="" alt="Status Animation">
+            
+            <p id="modal-message"></p>
+            <p>The secret word was: <span id="final-word-display"></span></p>
+            <button id="close-modal" onclick="resetGame()">Try Again</button>
+        </div>
+    </div>
+
+    <div>
+        <footer>
+            <p>&copy; 2026 The Daily Cipher. All rights reserved.</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
