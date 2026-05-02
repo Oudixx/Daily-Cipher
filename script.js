@@ -209,5 +209,33 @@ async function isWordReal(word) {
 board.addEventListener('click', () => {
     document.getElementById('mobile-input').focus();
 });
+const mobileInput = document.getElementById('mobile-input');
+
+mobileInput.addEventListener('input', () => {
+    // 1. Get the full string from the hidden input
+    const value = mobileInput.value;
+    
+    // 2. Determine which row we are currently on
+    const startBoxIndex = attempts * 5;
+
+    // 3. Loop through the 5 boxes of the current row
+    for (let i = 0; i < 5; i++) {
+        const box = document.getElementById(`box-${startBoxIndex + i}`);
+        
+        // If there is a character at this position in the input, show it
+        if (value[i]) {
+            box.textContent = value[i].toUpperCase();
+        } else {
+            // If not (e.g., user pressed backspace), clear the box
+            box.textContent = '';
+        }
+    }
+    
+    // 4. Synchronize your game state variables
+    currentGuess = value.toLowerCase();
+    currentBox = startBoxIndex + value.length;
+    
+    updateVisualFocus();
+});
 
 getNewCipher();
