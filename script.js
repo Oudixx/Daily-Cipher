@@ -1,32 +1,23 @@
-// Daily Cipher - a wordle inspired game
-
+// Daily Cipher - A Wordle-inspired game
 // DOM element references
 const board = document.getElementById('game-board');
 const regenBtn = document.getElementById('regen-btn');
+const mobileInput = document.getElementById('mobile-input');
+const difficultySelect = document.getElementById('difficulty');
+
 // Game state variables
 let currentBox = 0;
 let currentGuess = "";
 let secretWord = "";
 let attempts = 0;
 
-// Displays temporary system alerts for invalid words or errors
-function notifyUser(message) {
-    let alertBox = document.getElementById('archive-alert') || document.createElement('div');
-    if (!alertBox.id) {
-        alertBox.id = 'archive-alert';
-        document.body.appendChild(alertBox);
-    }
-    alertBox.textContent = message;
-    alertBox.classList.remove('hidden');
-    
-    // Reset timer to prevent premature hiding if user spams inputs
-    clearTimeout(alertBox.timeoutId);
-    alertBox.timeoutId = setTimeout(() => alertBox.classList.add('hidden'), 3000);
-}
+/**
+ * INITIALIZATION & API HANDLING
+ */
 
 // Fetches 5-letter word and metadata from Datamuse and Dictionary APIs
 async function getNewCipher() {
-    const diff = document.getElementById('difficulty').value;
+    const diff = difficultySelect.value;
     board.innerHTML = "";
 
     try {
@@ -40,21 +31,21 @@ async function getNewCipher() {
         const dictResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${wordToGuess}`);
         const dictData = await dictResponse.json();
 
-        // Recursively fetch if the selected word doesnt have a dictionary definition
+        // Recursively fetch if the selected word doesn't have a dictionary definition
         if (dictData.title === "No Definitions Found") return getNewCipher();
 
         const entry = dictData[0];
         const meaning = entry.meanings[0];
         secretWord = wordToGuess.toLowerCase();
 
-        // Display 5 API data points 
+        // Display 5 API data points for the Word document requirement
         document.getElementById('data-1').textContent = meaning.partOfSpeech;
         document.getElementById('data-2').textContent = entry.phonetic || "N/A";
         document.getElementById('data-3').textContent = meaning.definitions[0].definition;
         document.getElementById('data-4').textContent = 
-            (meaning.synonyms && meaning.synonyms.length > 0) ? meaning.synonyms.slice(0,3).join(", ") : "None found";
+            (meaning.synonyms && meaning.synonyms.length > 0) ? meaning.synonyms.slice(0, 3).join(", ") : "None found";
         document.getElementById('data-5').textContent = 
-            (meaning.antonyms && meaning.antonyms.length > 0) ? meaning.antonyms.slice(0,3).join(", ") : "None found";
+            (meaning.antonyms && meaning.antonyms.length > 0) ? meaning.antonyms.slice(0, 3).join(", ") : "None found";
 
         createGrid();
         updateVisualFocus();
@@ -65,17 +56,11 @@ async function getNewCipher() {
         console.error("Error fetching cipher details:", error);
     }
 }
-// Resets game state and fetches new cipher
-function resetGame() {
-    document.getElementById('game-modal').classList.add('modal-hidden');
-    document.getElementById('mobile-input').value = ""; // Clear for new game
-    currentBox = 0;
-    currentGuess = "";
-    attempts = 0;
-    getNewCipher();
-}
 
-// Dynamically builds row containers
+/**
+ * GRID & UI HELPERS
+ */
+
 function createGrid() {
     board.innerHTML = '';
     for (let r = 0; r < 6; r++) {
@@ -92,17 +77,32 @@ function createGrid() {
     }
 }
 
-// Highlights the specific tile targeted for the next character
 function updateVisualFocus() {
     const allBoxes = document.querySelectorAll('.box');
     allBoxes.forEach(box => box.classList.remove('current-box'));
     const activeTile = document.getElementById(`box-${currentBox}`);
-    if (activeTile && currentGuess.length < 5) {
+    if (activeTile && currentGuess.length < 5 && attempts < 6) {
         activeTile.classList.add('current-box');
     }
 }
 
-// Evaluates letter positions and triggers end-game states
+function notifyUser(message) {
+    let alertBox = document.getElementById('archive-alert') || document.createElement('div');
+    if (!alertBox.id) {
+        alertBox.id = 'archive-alert';
+        document.body.appendChild(alertBox);
+    }
+    alertBox.textContent = message;
+    alertBox.classList.remove('hidden');
+    
+    clearTimeout(alertBox.timeoutId);
+    alertBox.timeoutId = setTimeout(() => alertBox.classList.add('hidden'), 3000);
+}
+
+/**
+ * GAME LOGIC
+ */
+
 function verifyGuess(guess) {
     let startBoxIndex = attempts * 5;
     attempts++;
@@ -121,7 +121,8 @@ function verifyGuess(guess) {
         }
     }
 
-    document.getElementById('mobile-input').value = "";
+    // Reset mobile input for the next attempt
+    mobileInput.value = "";
 
     if (guess === secretWord) {
         setTimeout(() => showEndScreen(true), 2000);
@@ -130,31 +131,62 @@ function verifyGuess(guess) {
     }
 }
 
-// event listener for game input and submission
+async function isWordReal(word) {
+    try {
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+        return response.ok;
+    } catch (error) {
+        return false;
+    }
+}
+
+function resetGame() {
+    document.getElementById('game-modal').classList.add('modal-hidden');
+    mobileInput.value = ""; 
+    currentBox = 0;
+    currentGuess = "";
+    attempts = 0;
+    getNewCipher();
+}
+
+/**
+ * EVENT LISTENERS
+ */
+
+// Handle character input via the hidden mobile-friendly field
+// This prevents double-typing and works on iPhone/Android
+mobileInput.addEventListener('input', () => {
+    if (attempts >= 6) return;
+
+    // Filter for only letters and limit to 5
+    const value = mobileInput.value.toLowerCase().replace(/[^a-z]/g, '').slice(0, 5);
+    const startBoxIndex = attempts * 5;
+
+    for (let i = 0; i < 5; i++) {
+        const box = document.getElementById(`box-${startBoxIndex + i}`);
+        if (box) {
+            box.textContent = value[i] ? value[i].toUpperCase() : '';
+        }
+    }
+
+    currentGuess = value;
+    currentBox = startBoxIndex + value.length;
+    updateVisualFocus();
+});
+
+// Handle special keys (Enter) via window listener
 window.addEventListener('keyup', async (e) => {
     if (attempts >= 6) return;
-    // Handle letter input (only A-Z, max 5 characters)
-    if (e.key.length === 1 && e.key.match(/[a-z]/i) && currentGuess.length < 5) {
-        const box = document.getElementById(`box-${currentBox}`);
-        box.textContent = e.key.toUpperCase();
-        currentGuess += e.key.toLowerCase();
-        currentBox++;
-    }
-    // Handle backspace for deleting characters
-    if (e.key === 'Backspace' && currentGuess.length > 0) {
-        currentBox--;
-        document.getElementById(`box-${currentBox}`).textContent = '';
-        currentGuess = currentGuess.slice(0, -1);
-    }
-    // Handle Enter key for submitting guess
+
     if (e.key === 'Enter' && currentGuess.length === 5) {
         const firstBox = document.getElementById(`box-${attempts * 5}`);
         const currentRow = firstBox.parentElement;
         
+        // Visual indicator of validation in progress
         firstBox.style.opacity = "0.5";
         const valid = await isWordReal(currentGuess);
         firstBox.style.opacity = "1";
-    // If the word is not valid, show alert and shake the current row
+
         if (!valid) {
             notifyUser("WORD NOT FOUND IN ARCHIVE");
             currentRow.classList.add('shake');
@@ -163,18 +195,18 @@ window.addEventListener('keyup', async (e) => {
         }
         
         verifyGuess(currentGuess);
-        currentGuess = "";
+        currentGuess = ""; // Ready for the next row
     }
+});
 
-    updateVisualFocus();
+// Open keyboard when user taps the board
+board.addEventListener('click', () => {
+    mobileInput.focus();
 });
 
 regenBtn.addEventListener('click', resetGame);
+difficultySelect.addEventListener('change', getNewCipher);
 
-document.getElementById('difficulty').addEventListener('change', getNewCipher);
-
-
-// Displays end screen with dynamic content based on win/loss
 function showEndScreen(isWin) {
     const modal = document.getElementById('game-modal');
     const title = document.getElementById('modal-title');
@@ -198,53 +230,5 @@ function showEndScreen(isWin) {
     }
 }
 
-// Queries Dictionary API to prevent user from guessing nonsense words
-async function isWordReal(word) {
-    try {
-        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-        return response.ok;
-    } catch (error) {
-        return false;
-    }
-}
-
-
-
-// Forces keyboard open on mobile tap
-const mobileInput = document.getElementById('mobile-input');
-
-// When they click the board, focus the input without scrolling
-board.addEventListener('click', () => {
-    mobileInput.focus();
-});
-
-mobileInput.addEventListener('input', () => {
-    const value = mobileInput.value.toLowerCase();
-    const startBoxIndex = attempts * 5;
-
-    // Fill the 5 boxes in the current row based on the hidden input's value
-    for (let i = 0; i < 5; i++) {
-        const box = document.getElementById(`box-${startBoxIndex + i}`);
-        if (value[i]) {
-            box.textContent = value[i].toUpperCase();
-        } else {
-            box.textContent = '';
-        }
-    }
-
-    // Keep the game logic variables in sync
-    currentGuess = value;
-    currentBox = startBoxIndex + value.length;
-    
-    updateVisualFocus();
-});
-
-//  Clear the input after a guess is submitted
-function handleSubmission() {
-    // ... your existing verification logic ...
-    
-    // Reset the mobile input for the next row
-    mobileInput.value = ""; 
-}
-
+// Start game on load
 getNewCipher();
