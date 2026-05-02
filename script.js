@@ -68,6 +68,7 @@ async function getNewCipher() {
 // Resets game state and fetches new cipher
 function resetGame() {
     document.getElementById('game-modal').classList.add('modal-hidden');
+    document.getElementById('mobile-input').value = ""; // Clear for new game
     currentBox = 0;
     currentGuess = "";
     attempts = 0;
@@ -119,6 +120,8 @@ function verifyGuess(guess) {
             box.classList.add('absent');
         }
     }
+
+    document.getElementById('mobile-input').value = "";
 
     if (guess === secretWord) {
         setTimeout(() => showEndScreen(true), 2000);
@@ -205,37 +208,43 @@ async function isWordReal(word) {
     }
 }
 
+
+
 // Forces keyboard open on mobile tap
-board.addEventListener('click', () => {
-    document.getElementById('mobile-input').focus();
-});
 const mobileInput = document.getElementById('mobile-input');
 
+// When they click the board, focus the input without scrolling
+board.addEventListener('click', () => {
+    mobileInput.focus();
+});
+
 mobileInput.addEventListener('input', () => {
-    // 1. Get the full string from the hidden input
-    const value = mobileInput.value;
-    
-    // 2. Determine which row we are currently on
+    const value = mobileInput.value.toLowerCase();
     const startBoxIndex = attempts * 5;
 
-    // 3. Loop through the 5 boxes of the current row
+    // Fill the 5 boxes in the current row based on the hidden input's value
     for (let i = 0; i < 5; i++) {
         const box = document.getElementById(`box-${startBoxIndex + i}`);
-        
-        // If there is a character at this position in the input, show it
         if (value[i]) {
             box.textContent = value[i].toUpperCase();
         } else {
-            // If not (e.g., user pressed backspace), clear the box
             box.textContent = '';
         }
     }
-    
-    // 4. Synchronize your game state variables
-    currentGuess = value.toLowerCase();
+
+    // Keep the game logic variables in sync
+    currentGuess = value;
     currentBox = startBoxIndex + value.length;
     
     updateVisualFocus();
 });
+
+//  Clear the input after a guess is submitted
+function handleSubmission() {
+    // ... your existing verification logic ...
+    
+    // Reset the mobile input for the next row
+    mobileInput.value = ""; 
+}
 
 getNewCipher();
